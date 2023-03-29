@@ -1,8 +1,7 @@
-import os
-import time
-import math
+import os, time, math
 
 import chime
+
 from moviepy.editor import VideoFileClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 
