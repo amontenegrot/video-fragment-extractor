@@ -1,18 +1,19 @@
 import os, time, math
 
-import chime
-
 from moviepy.editor import VideoFileClip
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 
 
-def clear_terminal():
+def clear_terminal(text:str=''):
+    dos_windows = ['ce', 'nt', 'dos']
     if os.name == 'posix':
         os.system('clear')  # Unix/Linux/MacOS/BSD
-    elif os.name == 'ce' or os.name == 'nt' or os.name == 'dos':
+        print(text)
+    elif os.name in dos_windows:
         os.system('cls')  # DOS/Windows
+        print(text)
 
-def status_parameters(video:str, status_duration:int):
+def whatsapp_parameters(video:str, status_duration:int):
     clip = VideoFileClip(video)
     duration = math.ceil(clip.duration)
     number_status = math.ceil(duration/status_duration)
@@ -21,38 +22,61 @@ def status_parameters(video:str, status_duration:int):
 
 def output_name(file_name:str):
     extension = file_name.split('.')[1]
-    if extension != 'mp4': print('Verifique que el formato sea .mp4')
+    valid_extensions = ['mp4', 'MP4']
+    if extension not in valid_extensions: print('Verifique que la extensión sea mp4.')
 
-    full_name = file_name.split('.')[0]
-    full_name = full_name.split(' ')
-
-    concat_name = ''
-
-    for word in full_name:
-        word.capitalize()
-        concat_name = concat_name + word
+    name = file_name.split('.')[0]
+    name = name.capitalize()
     
-    return concat_name, extension
+    return name, extension
+
+def video_cutter(input_folder:str, video:str, output_folder:str):
+    video_path = f'{input_folder}/{video}'
+    video_name, file_extension = output_name(video)
+    counter, start, end = 1, 0, 29
+    number_status = whatsapp_parameters(video_path, end)
+    new_folder = video.split('.')[0]
+    output_folder = f'{output_folder}/{new_folder.capitalize()}'
+    os.makedirs(output_folder, exist_ok=True)  # Create folder
+
+    while counter <= number_status:
+        print(f'Fragmento {counter}; faltando {number_status-counter} fragmentos.')        
+        ffmpeg_extract_subclip(
+            video_path, start, end, 
+            targetname=f'{output_folder}/{str(counter).zfill(2)} {video_name}.{file_extension}'
+            )
+        start += 29
+        end += 29
+        counter += 1
+        time.sleep(1)
 
 
-video = 'video.mp4'  # Video file in the same folder as the script
-final_name, extension = output_name(video)
-counter = 1
-start = 0
-end = 30
-number_status = status_parameters(video, end)
+# Variables and constants of execution
+clear_terminal('Inicializando, por favor espere.')
+PATH = os.path.abspath(os.getcwd()) + '/'
+PATH = PATH.replace('\\', '/')
 
-while counter <= number_status:
-    print(f'Fragmento {counter}; faltando {number_status-counter} fragmentos.')
-    ffmpeg_extract_subclip(
-        video, start, end, 
-        targetname=f'{str(counter).zfill(2)} {final_name}.{extension}'
-        )
-    start += 30
-    end += 30
-    counter += 1
-    time.sleep(5)
-    clear_terminal()
+input_folder = PATH + 'videos'
+output_folder = PATH + 'salidas'
+list_videos = []
 
-chime.success()
-print('Proceso de corte de videos terminado con éxito.')
+# Extract name files
+clear_terminal('Obteniendo listado de videos a procesar.')
+
+content = os.listdir(input_folder)
+
+for file in content:
+    if os.path.isfile(os.path.join(input_folder, file)) and file.endswith('.mp4'):
+        list_videos.append(file)
+
+# Extract videoclips
+for file in list_videos:
+    clear_terminal('Realizando el proceso de corte.')
+    print(f'\tProceso de corte para {file} iniciado.')
+    video_cutter(input_folder, file, output_folder)
+    print(f'\tProceso de corte para {file} terminado con éxito.')
+
+# End
+clear_terminal('Proceso completado con éxito.')
+print('\n')
+os.system('pause')  # Press any key to continue
